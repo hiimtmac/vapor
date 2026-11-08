@@ -60,7 +60,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-metrics.git", from: "2.5.0"),
 
         // Swift tracing API
-        .package(url: "https://github.com/apple/swift-distributed-tracing.git", .upToNextMinor(from: "1.5.0")),
+        // 1.6.0 and 1.7.0 moved ServiceContext in ways that broke clients; 1.7.2 restores the aliases.
+        .package(url: "https://github.com/apple/swift-distributed-tracing.git", from: "1.7.2"),
 
         // Swift service context
         .package(url: "https://github.com/apple/swift-service-context.git", from: "1.0.0"),
@@ -85,8 +86,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-http-types", from: "1.7.0"),
 
         // Common data structures
-        // Pin until Async Algorithms releases a fix for the Collections 1.7.0 preview APIs.
-        .package(url: "https://github.com/apple/swift-collections", exact: "1.6.0"),
+        // The HTTP API builds on the Collections preview APIs, which are only stable within a minor release.
+        .package(url: "https://github.com/apple/swift-collections", .upToNextMinor(from: "1.7.1")),
 
         // X509 certificate types for the Swift ecosystem
         .package(url: "https://github.com/apple/swift-certificates.git", from: "1.21.0"),
@@ -98,12 +99,12 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-system.git", from: "1.8.0"),
 
         // Swift syntax parsing and generation
-        .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "602.0.0"),
+        .package(url: "https://github.com/swiftlang/swift-syntax.git", "602.0.0"..<"605.0.0"),
 
         // HTTP Server for low level request and response handling
         .package(
             url: "https://github.com/swift-server/swift-http-server.git",
-            .upToNextMinor(from: "0.4.0"),
+            .upToNextMinor(from: "0.5.0"),
             traits: [.defaults, .trait(name: "HTTP3", condition: .when(traits: ["UnstableHTTP3"]))]
         ),
 
@@ -216,6 +217,8 @@ let package = Package(
                 .product(name: "NIOHTTP3", package: "swift-nio-http3", condition: .when(traits: ["UnstableHTTP3"])),
                 .product(name: "NIOQUIC", package: "swift-nio-quic", condition: .when(traits: ["UnstableHTTP3"])),
                 .product(name: "NIOHTTPTypes", package: "swift-nio-extras"),
+                .product(name: "NIOHTTPServer", package: "swift-http-server"),
+                .product(name: "NIOPosix", package: "swift-nio"),
             ],
             resources: [
                 .copy("Utilities/foo.txt"),
