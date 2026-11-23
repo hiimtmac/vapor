@@ -67,7 +67,7 @@ public final class Application: Sendable, Service {
         let viewRenderer: ServiceOptionType<any ViewRenderer>
         let cache: ServiceOptionType<any Cache>
         let responder: ServiceOptionType<any Responder>
-        let server: ServiceOptionType<any Server>
+        let server: ServerOption
         let client: ServiceOptionType<any Client>
         let sessionDriver: ServiceOptionType<any SessionDriver>
         let sessionsConfiguration: SessionsConfiguration
@@ -77,7 +77,7 @@ public final class Application: Sendable, Service {
             viewRenderer: ServiceOptionType<any ViewRenderer> = .default,
             cache: ServiceOptionType<any Cache> = .default,
             responder: ServiceOptionType<any Responder> = .default,
-            server: ServiceOptionType<any Server> = .default,
+            server: ServerOption = .default,
             client: ServiceOptionType<any Client> = .default,
             sessionDriver: ServiceOptionType<any SessionDriver> = .default,
             sessionsConfiguration: SessionsConfiguration = .default()
@@ -96,6 +96,22 @@ public final class Application: Sendable, Service {
     public enum ServiceOptionType<Service: Sendable>: Sendable {
         case `default`
         case provided(Service)
+    }
+
+    /// How the application obtains the ``Server`` that receives its HTTP requests.
+    public enum ServerOption: Sendable {
+        /// Serve the application with swift-http-server, bound as described by ``Application/serverConfiguration``.
+        case `default`
+
+        /// Run the provided server. The server doesn't receive the application's routes or middleware.
+        case provided(any Server)
+
+        /// Create the server from the context that serves the application's routes and middleware.
+        ///
+        /// Use this for a custom ``Server`` that accepts connections itself and serves them with the
+        /// application's responder, for example through ``ServerContext/makeHTTPServerHandler()``. The closure runs
+        /// once, while the application is initialized; routes and middleware registered afterwards are still served.
+        case factory(@Sendable (ServerContext) -> any Server)
     }
 
     // MARK: - Initialization
@@ -168,6 +184,8 @@ public final class Application: Sendable, Service {
             self.server = NIOHTTPServerAdapter(context: serverContext)
         case .provided(let server):
             self.server = server
+        case .factory(let makeServer):
+            self.server = makeServer(serverContext)
         }
     }
 
